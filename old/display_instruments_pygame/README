@@ -1,0 +1,129 @@
+README
+
+Instrument Display project:
+
+####################################################################
+Requirements:
+
+Python 2.7: https://www.python.org/download/releases/2.7/
+Pygame for Python 2.7: http://www.pygame.org/download.shtml
+pyXPUDPServer https://github.com/leleopard/pyXPUDPServer
+####################################################################
+Installation:
+
+Install Python, Pygame and pyXPUDPServer
+pip install pygame
+pip install pyxpudpserver
+
+Modify the Instrument-indicator.ini and set the correct X-Plane instance IP.
+
+####################################################################
+Usage:
+
+python Instrument-indicator.py
+
+####################################################################
+Background:
+
+The idea of this project is to have a way to display via network, instruments or any information from X-plane Dataref in a remote computer, or via localhost in a second monitor.
+To achieve this I'm using a Python Plugin, that runs with X-Planes Python interface. This Plugin forwards designed Datarefs values via UDP to a client Python application.
+The Plugin uses a configuration file to specify the desired Datarefs to forward, and the Client Application uses another configuration file to draw the desired instruments, and set up how they will behave. This Configuration is designed to be super adaptable to any needs you may have. You can also code Python functions inside the client's configuration file to modify the Dataref data any way you like on the fly.
+
+##################################
+InstrumentDisplay.ini
+
+Each configuration block is defined by [] and has fixed values to define.
+There is only one GENERAL Block, with general configuration, and then other blocks, as many as you like, with the name you define where you will define all the instruments.
+
+[GENERAL]
+
+RESOLUTION=(1280, 1024) - Python style Tuple defining the window resolution.
+UDP_IP=
+UDP_R_PORT=48000 - UDP receive port, equal to the python plugin send port.
+UDP_S_PORT=48008 - UDP send port, equal to the python plugin receive port.
+
+DATAREFS = Python Style collection of Datarefs.
+For instance "sim/cockpit2/gauges/indicators/airspeed_kts_pilot".
+You can define as many Datarefs as you want.
+
+See the default InstrumentDisplay.ini for an example.
+
+##################################
+
+Instrument drawing:
+
+The Instrument Display project uses images to display all the elements of each instrument. Every image is drawn in a layer, from 1 to 
+5. So the maximum amount of layers an instrument can have are 5. For example, in a airspeed indicator gauge, you will have typically 
+two images. One base image, containing the instrument scale and such, and on top of that the needle image, that will rotate accordingly to the Dataref.
+Each image will have property's, and will interact, or not with defined Datarefs. For example the base image of our Airspeed indicator, 
+will not move at all. but the needle will rotate according to the Dataref value.
+Every instrument part will be defined by a block [], and can have any name inside. Do not repeat names.
+lets review our airspeed indicator example:
+
+[IAS_BASE] - block name, any name you want.
+
+TEXTURE="IAS.png" - texture name related with this block that will be located in the same directory of this property file.
+SCALE=0.7 - Instrument scale. > 1 to enlarge, < 1 to reduce, or 1 to keep the same.
+COORD=(160, 160) X and Y coordinate where the block center will be drawn in the window.
+ROTATE_TABLE="None" - sometimes you don't want the rotation to be linear you can specify a function. In this case no rotation so none.
+TRANSLATE_X_TABLE="None" - no translation function in the X axis.
+TRANSLATE_Y_TABLE="None" - no translation function in the Y axis.
+REVERSE="None" - Reverse or not the values.
+ROTATE_FUNC="None" - Associated Dataref for rotation.
+TRANSLATE_X_FUNC="None" - Associated Dataref for translation in X.
+TRANSLATE_Y_FUNC="None" - Associated Dataref for translation in Y.
+LAYER=1 - layer where to draw, where 1 is the first and 5 is the last drawn.
+
+lets review a more complicated example, the airspeed indicator needle:
+
+[IAS_NEEDLE] - block name
+
+TEXTURE="IAS_N.png" - texture of this block, the needle.
+SCALE=0.7 - scale the texture.
+COORD=(160, 160) - Coords where to draw this block in the window.
+ROTATE_TABLE=[(1,1),(35,25),(40,38),(45,48),(50,60),(55,72),(60,85),(65,100),(70,115),(75,130),(80,145),(85,160),(90,173),(95,186),
+(100,196),(105,207),(110,217),(115,226),(120,234),(125,243),(130,251),(135,260),(140,270),(145,279),(150,289),(155,299),(160,309),
+(165,319),(170,330),(200,360)] - here you can adjust , the value of the Dataref, and in this case, witch will be the angle associated. 
+this is necessary, because for example in the case of our Airspeed indicator, the scale is not linear. Its not the same angle from 40 
+to 50 Kias, than from 140 to 150, but the airspeed increment is the same. so you will define pair values of Dataref and angles. you can 
+define as many "steps" as you want, this will increase the accuracy of the instrument. this depends on the background image that you 
+are using, if its linear or not. For the values of Dataref in between two defined steps, a linear approach will be used automatically.
+TRANSLATE_X_TABLE="None"
+TRANSLATE_Y_TABLE="None"
+REVERSE=-1
+ROTATE_FUNC="sim/cockpit2/gauges/indicators/airspeed_kts_pilot" Dataref associated
+TRANSLATE_X_FUNC="None"
+TRANSLATE_Y_FUNC="None"
+LAYER=2
+
+Sometimes , in the most extreme cases, you will need to apply functions to the Datarefs values, like for the artificial horizon:
+
+[AI_NEEDLE_2]
+
+TEXTURE="AI_N2.png"
+SCALE=0.7
+COORD=(496, 160)
+ROTATE_TABLE=[(-180,-180),(0,0),(180,180)]
+TRANSLATE_X_TABLE=[(-90,-90),(0,0),(90,90)]
+TRANSLATE_Y_TABLE=[(-30,-60),(0,0),(30,60)]
+REVERSE=1
+ROTATE_FUNC="sim/cockpit2/gauges/indicators/roll_electric_deg_pilot"
+TRANSLATE_X_FUNC='(-1)*(tan(radians(sim/cockpit2/gauges/indicators/roll_electric_deg_pilot))*(SELF.myrelpos[1]))'
+TRANSLATE_Y_FUNC="sim/cockpit2/gauges/indicators/pitch_electric_deg_pilot"
+LAYER=2
+
+This happens because this instrument part, must move in conjunction with other parts. you have Yaw and Roll.
+
+In this case Im using a Python function to alter the Dataref value the way I want. 
+There are two special values you may need to call from within this property, and are the objects attributes:
+SELF.myrelpos[1] : The relative position at that moment.
+SELF.r : The relative angle at that moment.
+
+You can use these object attributes from the FUNC fields, the code will evaluate them.
+
+In these cases, I suggest investigating the examples, learning some Python and looking at this tool code. There is no room for me here to explain how to program. The script will evaluate all the Python code you put in the FUNC fields ,and use the Dataref you set there. So there is no limit in the behavior, you can achieve anything you need, but some thinking, and python coding may be needed. It depends on the complexity of what you want to do.
+
+There is no limit in the amount of instruments you can create. You will also have to create the images related for each instrument.
+
+Thorax.
+
