@@ -9,12 +9,11 @@ height=1080
 fps=60
 step=100
 
-bg_image = 'resources/player.png'
-fg_image = 'resources/player.png'
+bg_image = fg_image = 'player.png'
 
 window = pyglet.window.Window(width=width, height=height)
-batch = pyglet.graphics.Batch()
 
+batch = pyglet.graphics.Batch()
 bg = pyglet.graphics.OrderedGroup(0)
 fg = pyglet.graphics.OrderedGroup(1)
 
@@ -35,7 +34,8 @@ def update(dt):
     window.set_caption(str(int(1/dt)) + ' fps ' + str(len(ins))+ ' objects')
 
     for instrument in ins:
-        angle= random.randint(0, 359)
+        #angle=random.randint(0, 359)
+        angle=instrument.rotation+10
         instrument.update(rotation=angle)
 
 for x in range(0, width, step):

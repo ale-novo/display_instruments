@@ -60,7 +60,7 @@ def update(dummy):
         square1.angle -= 5
 
 
-square1 = TexturedSquare(120, 120, 300, 200, "dirt.png")
+square1 = TexturedSquare(120, 120, 300, 200, "player.png")
 
 pyglet.clock.schedule_interval(update, 1 / 60.0)
 pyglet.app.run()
