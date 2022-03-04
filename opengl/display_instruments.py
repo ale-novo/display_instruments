@@ -6,41 +6,21 @@ from lib.app import *
 
 import pyglet, random
 
-width=1920
-height=1080
-
-fps=60
-step=100
-
-image='player.png'
-ins=[]
-
-window = pyglet.window.Window(width=width, height=height)
-
-@window.event
-def on_draw():
-  pyglet.gl.glClearColor(0, 0, 0, 0)
-  pyglet.gl.glClear(pyglet.gl.GL_COLOR_BUFFER_BIT)
-  for item in ins:
-    item.draw()
-
 def update(dt):
-  window.set_caption(str(int(1/dt)) + ' fps ' + str(len(ins))+ ' objects')
-  for item in ins:
-    #angle=random.randint(0, 359)
-    angle=item.angle + 10
-    item.update(item.x, item.y, item.size, angle)
-
-for x in range(0, width, step):
-  for y in range(0, height, step):
-    ins.append(Instrument(image, x, y))
-
-for x in range(int(step/2), width, step):
-  for y in range(int(step/2), height, step):
-    ins.append(Instrument(image, x, y))
+  window.set_caption(str(int(1/dt)) + ' fps ')
 
 if __name__ == "__main__":
+
   app = App()
-  pyglet.clock.schedule_interval(update, 1/fps)
+  window = pyglet.window.Window(width=app.resolution[0], height=app.resolution[1])
+
+  @window.event
+  def on_draw():
+    pyglet.gl.glClearColor(0, 0, 0, 0)
+    pyglet.gl.glClear(pyglet.gl.GL_COLOR_BUFFER_BIT)
+
+    app.draw_instruments()
+
+  pyglet.clock.schedule_interval(update, 1/app.fps)
   pyglet.app.run()
 
