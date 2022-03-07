@@ -2,6 +2,7 @@
 # encoding: utf-8
 
 from math import *
+from lib.utils import *
 
 import pyglet, operator
 
@@ -88,6 +89,7 @@ class Instrument:
     self.update_functions(DatarefDict)
     self.draw()
 
+  @timeit
   def update_tables(self, DatarefDict):
     if ( self.dataref != "None" ) and ( DatarefDict is not None ):
       translate_x_table_function = ''
@@ -183,7 +185,7 @@ class Instrument:
         if isinstance(hide_table_function['hide'], str):
           self.hide_table.update({'hide': eval(hide_table_function['hide'])})
 
-
+  @timeit
   def update_functions(self, DatarefDict):
     if ( self.dataref != "None" ) and ( DatarefDict is not None ):
       rotate_function = ''
@@ -345,6 +347,7 @@ class Instrument:
 
     self.myrelpos = tuple(map(operator.sub, self.coord_org, self.coord))
 
+  @timeit
   def draw(self):
 
     pyglet.gl.glPushMatrix()

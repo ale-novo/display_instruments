@@ -3,6 +3,7 @@
 
 from configparser import ConfigParser
 from lib.instrument import *
+from lib.utils import *
 
 import os, sys, random
 
@@ -168,6 +169,7 @@ class App:
     self.instruments.sort(key=lambda x: x.layer, reverse=False)
     print('Loaded ' + str(len(self.item_list)) + ' objects')
 
+  @timeit
   def draw_instruments(self):
     for item in self.instruments:
       item.update(self.get_data())
