@@ -84,6 +84,7 @@ class Instrument:
     else:
       self.texture = 'None'
 
+  @timeit
   def update(self, DatarefDict):
     self.update_tables(DatarefDict)
     self.update_functions(DatarefDict)
@@ -264,9 +265,8 @@ class Instrument:
       if (rotate_function is not None) or (translate_x_function is not None) or (translate_y_function is not None) or (hide_function is not None) or (text_function is not None):
         self.refresh_attributes(rotate_function, translate_x_function, translate_y_function, hide_function, text_function)
 
-  def refresh_attributes(self, rotate, translate_x, translate_y, hide, text_func):
-    self.coord = self.coord_org
-
+  #@timeit
+  def table_rotate(self, rotate):
     if rotate is not None:
 
       if rotate <= self.rotate_table[0][0]:
@@ -287,6 +287,8 @@ class Instrument:
 
         self.angle = self.angle_new
 
+  #@timeit
+  def table_translate_x(self, translate_x):
     if translate_x is not None:
 
       if translate_x <= self.translate_x_table[0][0]:
@@ -311,6 +313,9 @@ class Instrument:
             break
 
       self.coord = (self.coord[0] + self.scale*move, self.coord[1])
+
+  #@timeit
+  def table_translate_y(self, translate_y):
 
     if translate_y is not None:
 
@@ -337,13 +342,34 @@ class Instrument:
 
       self.coord = (self.coord[0], self.coord[1] - self.scale*move)
 
+  #@timeit
+  def show_hide(self, hide):
     if hide is not None:
       if hide <= self.hide_table['hide']:
-        self.coord = (self.coord[0] - 4096, self.coord[1] -4096 )
+        self.coord = (self.coord[0] - 4096, self.coord[1] - 4096 )
 
-    if (text_func is not None)  and (text_func != self.text_func_old):
-      self.label.text=str(text_func)
-      self.text_func_old=text_func
+  @timeit
+  def calc_label(self, text_func):
+    if (text_func is not None) and (text_func != self.text_func_old):
+      text_str=str(text_func)
+
+      self.label.text=text_str
+      self.text_func_old=text_str
+
+
+  @timeit
+  def refresh_attributes(self, rotate, translate_x, translate_y, hide, text_func):
+    self.coord = self.coord_org
+
+    self.table_rotate(rotate)
+
+    self.table_translate_x(translate_x)
+
+    self.table_translate_y(translate_y)
+
+    self.show_hide(hide)
+
+    self.calc_label(text_func)
 
     self.myrelpos = tuple(map(operator.sub, self.coord_org, self.coord))
 
