@@ -1,0 +1,51 @@
+@alenovo I had a look at your test-sprites.py file, and there is one issue. If you use pyglet.image.load, you'll get a separate Texture each time.
+This will tank your draw performance, even in a Batch, because it will prevent the draw calls from being consolidated internally (due to different Texture ID).
+You can either make a TextureAtlas, and add all of your unique textures to that, 
+or just replace pyglet.image.load with pyglet.resource.image. The latter does it automatically, and recommended unless you need to customize the TextureAtlas in some way.
+Benjamin — 09/03/2022
+For your test-opengl.py, doing completely separate draw calls for each item like that, including setting all of the GL state each time, won't scale well. 
+Using GL directly can be beneficial, but you need to batch your draws. You can use a VertexDomain directly, or just switch from graphics.vertex_list(...) to batch.add(...). The arguments are essentially the same, except you need to provide the GL primitive type. 
+GL_TRIANGLE_STRIP needs extra care when batching, due to it's nature. From the docs: 
+When using ``GL_LINE_STRIP``, ``GL_TRIANGLE_STRIP`` or ``GL_QUAD_STRIP`` care
+must be taken to insert degenerate vertices at the beginning and end of each
+vertex list.  For example, given the vertex list::
+
+    A, B, C, D
+
+the correct vertex list to provide the vertex list is::
+
+    A, A, B, C, D, D
+Rather than going through the trouble, it's often easier to just use GL_TRIANGLES. Especially when dealing with individual unique shapes.
+alenovo — Yesterday at 06:32
+@Benjamin thanks for that, although the code you should look at is https://github.com/ale-novo/display_instruments/blob/master/opengl/display_instruments.py
+GitHub
+display_instruments/display_instruments.py at master · ale-novo/dis...
+Contribute to ale-novo/display_instruments development by creating an account on GitHub.
+display_instruments/display_instruments.py at master · ale-novo/dis...
+alenovo — Yesterday at 07:19
+in regards to the batch option, i know it can be improved, however the weird issue im finding is delays when doing https://github.com/ale-novo/display_instruments/blob/master/opengl/lib/instrument.py#L356
+GitHub
+display_instruments/instrument.py at master · ale-novo/display_inst...
+Contribute to ale-novo/display_instruments development by creating an account on GitHub.
+display_instruments/instrument.py at master · ale-novo/display_inst...
+to run my code just execute ./display_instruments.py in the opengl directory. fps for me are about 15 and if you comment that line it goes to 45
+Benjamin — Yesterday at 07:24
+I can see in your Instrument class, you're using pyglet.image.load(texture), so get rid of that first of all.
+That change by itself won't help much, but it's necessary to do batched rendering. 
+
+The next step is to get rid of the Instrument.draw() calls. It won't scale well, since there is just too much overhead at the Python/OpenGL boundary.
+Text rendering is fairly expensive. By freeing up CPU cycles with the other rendering, it will have more headroom.
+Consider using pyglet Sprites for your instrument classes. The rotation and scaling will then be handled in a way that's Batchable.
+alenovo — Yesterday at 07:54
+Hi @Benjamin  thanks for that, ive done proof of concept testing with sprites and they were a bit slower than opengl, even with batch rendering.  but i will trywith the full app. I will try to implement the changes you suggested
+instead of pyglet.image.load(texture) what should i use? just a sprite? cheers
+Benjamin — Yesterday at 07:56
+I posted it above in my first reply. Give it a try with your test-sprites.py file.
+alenovo — Yesterday at 07:57
+@Benjamin yeah goit it cheers!
+i will read your suggestions and try again. realistically drawing a mix of sprites and labels and updating them (rotate scale translate for sprites, and change text for labels) how many objects can i have in pygame before the performance goes down? i need in the order of hundreds and at least 30 fps. Is pyglet the right tool? cheers
+Benjamin — Yesterday at 08:02
+If it's just rendering static Sprites, then it's tens of thousands (depending on your system). If you are modifying their position/scaling/rotation each frame, then a few thousand at 60fps.
+Text rendering, probably only a hundred labels or so, if you're updating the text each frame.
+It's not really designed to be used in that way.
+A custom bitmapped text renderer would work a lot better If you really need  a large number of labels. There are some code examples of that floating around I think.
